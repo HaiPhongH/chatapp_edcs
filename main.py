@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, current_user, logout_user
 from flask_socketio import SocketIO, join_room, leave_room, send
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.sql import text
+from werkzeug import debug
 from models import User
 from form import RegistrationForm, LoginForm
 from passlib.hash import pbkdf2_sha256
@@ -58,7 +58,6 @@ def login():
 
     if login_form.validate_on_submit():
         user_object = User.query.filter_by(username=login_form.username.data).first()
-        print(login_form.username.data)
         login_user(user_object)
         return redirect(url_for('exchange_message'))
 
@@ -77,7 +76,7 @@ def exchange_message():
     if not current_user.is_authenticated:
         flash('Please Login!', 'danger')
         return redirect(url_for('login'))
-    return render_template('exchange_message.html', username=current_user.username)
+    return render_template('exchange_message.html', username=current_user.username, rooms=ROOMS)
 
 
 @app.route('/search', methods=['GET', 'POST'])
@@ -86,31 +85,39 @@ def search():
     users = User.query.filter(User.username.like('%' + name_search + '%')).all()
     return jsonify([user.serialize() for user in users])
 
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('404.html'), 404
 
-@socketio.on('incoming-message')
-def on_message(data):
-    message = data['message']
+@socketio.on('message')
+def message(data):
+    msg = data['msg']
     username = data['username']
     room = data['room']
     timestamp = time.strftime('%b-%d %I:%M%p', time.localtime())
-    send({'username': username, 'message': message, 'timestamp': timestamp}, room=room)
+    print(msg)
+    send({'username': username, 'msg': msg, 'timestamp': timestamp}, room=room)
 
 
 @socketio.on('join')
-def on_join(data):
+def join(data):
     username = data['username']
     room = data['room']
     join_room(room)
+    print('join room: ', room, 'username: ', username)
     send({'message': username + ' has joined ' + room + ' room.'}, room=room)
 
 
 @socketio.on('leave')
-def on_leave(data):
+def leave(data):
     username = data['username']
     room = data['room']
     leave_room(room)
+    print('leave room: ', room, 'username: ', username)
     send({'message': username + ' has left the room.'}, room=room)
 
 
 if __name__ == "__main__":
+    # socketio.run(app, debug=True)
     app.run(debug=True)

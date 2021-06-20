@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // Connect to websocket
-    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port, {transports: ['websocket']});
 
     // Retrieve username
     const username = document.querySelector('#get-username').innerHTML;
@@ -12,15 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Send messages
     document.querySelector('#send_message').onclick = () => {
-        socket.emit('incoming-msg', {'msg': document.querySelector('#user_message').value,
+        socket.emit('message', {'msg': document.querySelector('#user_message').value,
             'username': username, 'room': room});
-
         document.querySelector('#user_message').value = '';
     };
 
     // Display all incoming messages
     socket.on('message', data => {
-
+        console.log(data.msg);
         // Display current message
         if (data.msg) {
             const p = document.createElement('p');
@@ -76,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Select a room
     document.querySelectorAll('.select-room').forEach(p => {
         p.onclick = () => {
-            let newRoom = p.innerHTML
+            let newRoom = p.innerHTML;
             // Check if user already in the room
             if (newRoom === room) {
                 msg = `You are already in ${room} room.`;
