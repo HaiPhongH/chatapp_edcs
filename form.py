@@ -38,3 +38,6 @@ class LoginForm(FlaskForm):
     username = StringField('username', validators=[InputRequired(message="user Name Required!")])
     password = PasswordField('password', validators=[InputRequired(message="Password Required!"), validate_profile])
 
+class SearchForm(FlaskForm):
+    username = StringField('username', validators=[InputRequired(message="user Name Required!")])
+    

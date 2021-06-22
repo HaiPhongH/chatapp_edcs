@@ -1,14 +1,63 @@
 document.addEventListener('DOMContentLoaded', () => {
-
+    
     // Connect to websocket
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port, {transports: ['websocket']});
 
     // Retrieve username
     const username = document.querySelector('#get-username').innerHTML;
 
-    // Set default room
-    let room = "Lounge"
-    joinRoom("Lounge");
+    // // Set default room
+    // let room = document.querySelectorAll('.select-room');
+    // joinRoom(room[0].innerHTML);
+    // console.log(room[0].innerHTML);
+
+    // connect to user
+    document.querySelectorAll('.search-users').forEach(p => {
+        p.onclick = () => {
+            let friend_name = p.innerHTML;
+            // Check if user already in the room
+            console.log(friend_name);
+            if (friend_name === username) {
+                msg = `You are  ${username}, cannot connect to yourself.`;
+                printSysMsg(msg);
+            } else {
+                // ajax
+                $.ajax({
+                    method: 'post',
+                    url: '/connect_user',
+                    data: {'name':friend_name, 'id':p.id},
+                    success: function(res) {
+                        console.log(res['msg']);
+                        var const_p = "<p>" + res['msg'] + "</p>";
+                        $('#display-message-section').html(const_p);
+                    }
+                });
+            }
+        };
+    });
+
+    // block user
+    document.querySelectorAll('.block-btn').forEach(button => {
+        button.onclick = () => {
+            let blocked_user_id = button.id;
+            let btn_value = button.value;
+            console.log(btn_value);
+            $.ajax({
+                method: 'post',
+                url: '/block_user',
+                data: {'id': blocked_user_id, 'action': btn_value},
+                success: function(res) {
+                    console.log(res['msg']);
+                    if (btn_value === 'Block') {
+                        button.value = 'Un-Block';
+                    }
+                    else {
+                        button.value = 'Block';
+                    }
+                }
+            });
+        }
+    });
 
     // Send messages
     document.querySelector('#send_message').onclick = () => {
@@ -77,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         p.onclick = () => {
             let newRoom = p.innerHTML;
             // Check if user already in the room
+            console.log(newRoom);
             if (newRoom === room) {
                 msg = `You are already in ${room} room.`;
                 printSysMsg(msg);
